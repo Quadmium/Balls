@@ -23,6 +23,7 @@
 	<p>Hello!</p>
 	<p>Click and drag to create a ball</p>
 	<p>Press F to toggle friction</p>
+	<p>Press C to clear</p>
 </body>
 
 <script>
@@ -104,6 +105,8 @@ function checkKey(e) {
 
     if (e.keyCode == '70')
     	friction = !friction;
+    if (e.keyCode == '67')
+    	worldObjects.length = 0;
 }
 
 function init()
@@ -111,14 +114,13 @@ function init()
 	window.lastTime = new Date().getTime();
 	window.g = new graphics();
 
-	/*
-	worldObjects.push(new ball(100, new vector(250, 400)));
+	worldObjects.push(new ball(70, new vector(250, 400)));
 	worldObjects.push(new ball(50, new vector(400, 400)));
 	worldObjects[0].velocity = new vector(200, 0);
-	worldObjects[0].mass = 4;
+	worldObjects[0].mass = 70*70/50/50;
 	worldObjects[0].color = "#550055";
-	worldObjects[1].velocity = new vector(200, -50);
-	*/
+	worldObjects[1].velocity = new vector(400, -50);
+	worldObjects[0].color = "#555555";
 
 	g.canvas.addEventListener('mousemove', function(evt) {
 		window.mousePos = getMousePos(g.canvas, evt);
@@ -200,7 +202,7 @@ function OnUpdate()
 
 				// Convert axis frame to center of mass frame
 				// Negate these velocities and return to axis frame
-				var cmVel = (bc1.mult(curBall.mass).add(bc2.mult(otherBall.mass))).div(curBall.mass + otherBall.mass);
+				var cmVel = bc1.mult(curBall.mass).add(bc2.mult(otherBall.mass)).div(curBall.mass + otherBall.mass);
 				var newv1 = bc1.sub(cmVel).mult(-1).add(cmVel);
 				var newv2 = bc2.sub(cmVel).mult(-1).add(cmVel);
 
