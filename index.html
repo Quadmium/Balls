@@ -1,0 +1,265 @@
+<html>
+<head>
+	<style>
+	html, body {
+		margin: 0;
+		padding: 0;
+	}
+
+	* {
+		overflow-x: hidden;
+	}
+
+	::-webkit-scrollbar { 
+    	display: none; 
+	}
+
+	</style>
+	<title>Balls</title>
+</head>
+
+<body onload="init()">
+	<canvas width=500 height=500 id="can"></canvas>
+	<p>Hello!</p>
+	<p>Click and drag to create a ball</p>
+	<p>Press F to toggle friction</p>
+</body>
+
+<script>
+
+function componentToHex(c) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
+var graphics = function() 
+{
+	this.canvas = document.getElementById("can");
+	this.ctx = this.canvas.getContext("2d");
+};
+
+var vector = function(x, y)
+{
+	this.x = x;
+	this.y = y;
+	this.mag = function() {
+		return Math.sqrt(this.x * this.x + this.y * this.y);
+	};
+	this.mult = function(c) {
+		return new vector(this.x * c, this.y * c);
+	};
+	this.div = function(c) {
+		return new vector(this.x / c, this.y / c);
+	};
+	this.add = function(v) {
+		return new vector(this.x + v.x, this.y + v.y);
+	};
+	this.sub = function(v) {
+		return new vector(this.x - v.x, this.y - v.y);
+	};
+	this.norm = function() {
+		return new vector(this.x, this.y).div(this.mag());
+	};
+	this.dot = function(v) {
+		return this.x * v.x + this.y * v.y;
+	};
+	this.comp = function(v) {
+		return this.dot(v) / v.mag();
+	};
+	this.proj = function(v) {
+		return v.norm().mult(this.comp(v));
+	};
+	this.clone = function() {
+		return new vector(this.x, this.y);
+	};
+}
+
+var ball = function(radius, position) 
+{
+	this.position = position == undefined ? new vector(0, 0) : position.clone();
+	this.radius = radius == undefined ? 50 : radius;
+	this.velocity = new vector(0, 0);
+	this.acceleration = new vector(0, 0);
+	this.mass = 1;
+	this.color = "#000000";
+	this.collision = true;
+};
+
+var worldObjects = [];
+
+function getMousePos(canvas, evt) {
+	var rect = canvas.getBoundingClientRect();
+	return new vector(evt.clientX - rect.left, evt.clientY - rect.top);
+}
+
+document.onkeydown = checkKey;
+
+function checkKey(e) {
+
+    e = e || window.event;
+
+    if (e.keyCode == '70')
+    	friction = !friction;
+}
+
+function init()
+{
+	window.lastTime = new Date().getTime();
+	window.g = new graphics();
+
+	/*
+	worldObjects.push(new ball(100, new vector(250, 400)));
+	worldObjects.push(new ball(50, new vector(400, 400)));
+	worldObjects[0].velocity = new vector(200, 0);
+	worldObjects[0].mass = 4;
+	worldObjects[0].color = "#550055";
+	worldObjects[1].velocity = new vector(200, -50);
+	*/
+
+	g.canvas.addEventListener('mousemove', function(evt) {
+		window.mousePos = getMousePos(g.canvas, evt);
+	}, false);
+
+	g.canvas.addEventListener('mousedown', function(evt) {
+		window.mouseClickPos = getMousePos(g.canvas, evt);
+		window.mousePressed = true;
+	}, false);
+
+	g.canvas.addEventListener('mouseup', function(evt) {
+		window.mousePressed = false;
+	}, false);
+
+	window.mousePressed = false;
+	window.drawingBall = false;
+	window.friction = false;
+	window.mu = 0.9;
+
+	OnUpdate();
+}
+
+function OnUpdate()
+{
+	var deltaTime = (new Date().getTime() - window.lastTime) / 1000;
+	window.lastTime = new Date().getTime();
+
+	g.canvas.width = window.innerWidth;
+	g.canvas.height = window.innerHeight;
+
+	for(var i=0; i < worldObjects.length; i++)
+	{
+		var curBall = worldObjects[i];
+		curBall.acceleration.y = -500;
+		curBall.velocity = curBall.velocity.add(curBall.acceleration.mult(deltaTime));
+		curBall.position = curBall.position.add(curBall.velocity.mult(deltaTime));
+
+		if(curBall.position.y < curBall.radius)
+		{
+			curBall.velocity.y = -curBall.velocity.y;
+			curBall.position.y = curBall.radius;
+			if(friction)
+				curBall.velocity.y *= mu;
+		}
+
+		if(curBall.position.y > g.canvas.height - curBall.radius)
+		{
+			curBall.velocity.y = -curBall.velocity.y;
+			curBall.position.y = g.canvas.height - curBall.radius;
+			if(friction)
+				curBall.velocity.y *= mu;
+		}
+
+		if(curBall.position.x < curBall.radius)
+		{
+			curBall.velocity.x = -curBall.velocity.x;
+			curBall.position.x = curBall.radius;
+			if(friction)
+				curBall.velocity.x *= mu
+		}
+
+		if(curBall.position.x > g.canvas.width - curBall.radius)
+		{
+			curBall.velocity.x = -curBall.velocity.x;
+			curBall.position.x = g.canvas.width - curBall.radius;
+			if(friction)
+				curBall.velocity.x *= mu;
+		}
+
+		for(var j=i+1; j < worldObjects.length; j++)
+		{
+			var otherBall = worldObjects[j];
+			var axis = curBall.position.sub(otherBall.position);
+			if(axis.mag() < curBall.radius + otherBall.radius && curBall.collision && otherBall.collision)
+			{
+				// Project both velocities to axis frame
+				var bc1 = curBall.velocity.proj(axis);
+				var bc2 = otherBall.velocity.proj(axis);
+
+				// Convert axis frame to center of mass frame
+				// Negate these velocities and return to axis frame
+				var cmVel = (bc1.mult(curBall.mass).add(bc2.mult(otherBall.mass))).div(curBall.mass + otherBall.mass);
+				var newv1 = bc1.sub(cmVel).mult(-1).add(cmVel);
+				var newv2 = bc2.sub(cmVel).mult(-1).add(cmVel);
+
+				curBall.velocity = curBall.velocity.sub(bc1).add(newv1);
+				otherBall.velocity = otherBall.velocity.sub(bc2).add(newv2);
+
+				// Avoid balls inside each other by moving smaller ball
+				var smallerBall = curBall.radius < otherBall.radius ? curBall : otherBall;
+				var biggerBall = curBall.radius < otherBall.radius ? otherBall : curBall;
+				if(smallerBall == otherBall)
+					axis = axis.mult(-1);
+
+				smallerBall.position = biggerBall.position.add(axis.norm().mult(smallerBall.radius + biggerBall.radius));
+			}
+		}
+	}
+	
+	g.ctx.fillStyle="#FFFFFF";
+	g.ctx.fillRect(0, 0, g.canvas.width, g.canvas.height);
+
+	for(var i=0; i < worldObjects.length; i++)
+	{
+		var curBall = worldObjects[i];
+		g.ctx.fillStyle=curBall.color;
+		g.ctx.beginPath();
+		g.ctx.arc(curBall.position.x, g.canvas.height - curBall.position.y, curBall.radius, 0, 2 * Math.PI);
+		g.ctx.fill();
+		g.ctx.closePath();
+	}
+
+	if(mousePressed || drawingBall)
+	{
+		window.drawingBall = true;
+		var radius = mousePos.sub(mouseClickPos).mag();
+
+		var clr = Math.floor(radius) % 360;
+		g.ctx.fillStyle = "hsl(" + clr + ", 100%, 50%)";
+		g.ctx.beginPath();
+		g.ctx.arc(mouseClickPos.x, mouseClickPos.y, radius, 0, 2 * Math.PI);
+		g.ctx.fill();
+		g.ctx.closePath();
+	} 
+	
+	if(!mousePressed && drawingBall)
+	{
+		drawingBall = false;
+		var adjPos = mouseClickPos.clone();
+		adjPos.y = g.canvas.height - adjPos.y;
+		var b = new ball(mousePos.sub(mouseClickPos).mag(), adjPos);
+		b.mass = b.radius * b.radius / 50 / 50;
+
+		var clr = Math.floor(b.radius) % 360;
+		b.color = "hsl(" + clr + ", 100%, 50%)";
+
+		worldObjects.push(b);
+	}
+
+	setTimeout(OnUpdate, 0);
+}
+
+</script>
+</html>
