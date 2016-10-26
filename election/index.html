@@ -42,9 +42,15 @@
 var worldObjects = [];
 var mousePressed = false;
 var drawingBall = false;
-var friction = false;
-var mu = 0.9;
+var friction = true;
+var mu = 0.7;
 var scale = 1;
+
+var electionTrump = ["AL","9","AK","3","AZ","11","AR","6","GA","16","ID","4","IN","11","IA","6","KS","6","KY","8","LA","8","MS","6","MO","10","MT","3","NE","5","ND","3","OH","18","OK","7","SC","9","SD","3","TN","11","TX","38","UT","6","WV","5","WY","3"];
+
+var electionHillary = ["CO","9","CT","7","DE","3","HI","4","ME","4","MD","10","MA","11","MI","16","MN","10","NV","6","NH","4","NJ","14","NM","5","NY","29","NC","15","PA","20","VT","3","OR","7","RI","4","FL","29","IL","20","VA","13","WA","12","WI","10","CA","55"];
+
+var spawnIndex = 0;
 
 function init()
 {
@@ -79,9 +85,53 @@ function initWorld()
 	worldObjects[1].velocity = new vector(400, -50);
 	worldObjects[0].color = "#555555";*/
 
-	worldObjects.push(new pRect(100, 500, new vector(400,400), 0 * Math.PI / 180));
-	worldObjects[0].color = "#555555";
-	worldObjects[0].outline = true;
+	var cupWidth = 400;
+	window.trumpColor = "#bc4d4d";
+	window.hillaryColor = "#4d76bc";
+	var leadWidth = 300;
+	var leadRot = 30 * Math.PI / 180
+
+	worldObjects.push(new pRect(50, 400, new vector(25+5,210), 0 * Math.PI / 180));
+	worldObjects[0].color = hillaryColor;
+	worldObjects.push(new pRect(50, 400, new vector(25+5 + cupWidth,210), 0 * Math.PI / 180));
+	worldObjects[1].color = hillaryColor;
+	worldObjects.push(new pRect(50, 400, new vector(g.width-(25+5),210), 0 * Math.PI / 180));
+	worldObjects[2].color = trumpColor;
+	worldObjects.push(new pRect(50, 400, new vector(g.width-(25+5 + cupWidth),210), 0 * Math.PI / 180));
+	worldObjects[3].color = trumpColor;
+	worldObjects.push(new pRect(cupWidth + 10, 50, new vector(25+5+cupWidth/2,35), 0 * Math.PI / 180));
+	worldObjects[4].color = hillaryColor;
+	worldObjects.push(new pRect(cupWidth + 10, 50, new vector(g.width-(25+5+cupWidth/2),35), 0 * Math.PI / 180));
+	worldObjects[5].color = trumpColor;
+	worldObjects.push(new pRect(leadWidth, 50, new vector(g.width/2 + leadWidth * Math.cos(leadRot) / 2,g.height - 200), 0 * Math.PI / 180));
+	worldObjects[6].color = trumpColor;
+	worldObjects[6].rotation = leadRot;
+	worldObjects.push(new pRect(leadWidth, 50, new vector(g.width/2 - leadWidth * Math.cos(leadRot) / 2,g.height - 200), 0 * Math.PI / 180));
+	worldObjects[7].color = hillaryColor;
+	worldObjects[7].rotation = -leadRot;
+
+	setTimeout(spawnBall, 1000);
+}
+
+function spawnBall()
+{
+	if(spawnIndex < electionTrump.length + electionHillary.length)
+	{
+		var list = spawnIndex % 2 == 0 ? electionTrump : electionHillary;
+		var xPos = spawnIndex % 2 == 0 ? g.width / 2 + 20 : g.width / 2 - 20;
+
+		worldObjects.push(new pBall(Math.sqrt(parseInt(list[Math.floor(spawnIndex/2) * 2 + 1])) * 10,new vector(xPos + Math.random() * 5, g.height)));
+		worldObjects[worldObjects.length-1].text = list[Math.floor(spawnIndex/2) * 2];
+		worldObjects[worldObjects.length - 1].color = spawnIndex % 2 == 0 ? trumpColor.replace("4","9") : hillaryColor.replace("4","9");
+
+		spawnIndex++;
+		setTimeout(spawnBall, 1000);
+	}
+
+	/*
+	worldObjects.push(new pBall(Math.floor(Math.random()*70),new vector(600, 200)));
+	worldObjects[worldObjects.length-1].text = "hi";
+	*/
 }
 
 function onUpdate()
@@ -125,7 +175,7 @@ function onUpdate()
 			curObj.onDraw(g);
 	}
 
-	handleInput();
+	//handleInput();
 
 	setTimeout(onUpdate, 1);
 }

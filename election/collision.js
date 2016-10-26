@@ -28,13 +28,29 @@ function handleCollisionBallBall(curBall, otherBall)
 		curBall.velocity = curBall.velocity.sub(bc1).add(newv1);
 		otherBall.velocity = otherBall.velocity.sub(bc2).add(newv2);
 
+		var decision = curBall.radius < otherBall.radius;
+
+		if(curBall.static && !otherBall.static)
+			decision = false;
+		else if (otherBall.static && !curBall.static)
+			decision = true;
+		else if(curBall.static && otherBall.static)
+			return;
+
 		// Avoid balls inside each other by moving smaller ball
-		var smallerBall = curBall.radius < otherBall.radius ? curBall : otherBall;
-		var biggerBall = curBall.radius < otherBall.radius ? otherBall : curBall;
+		var smallerBall = decision ? curBall : otherBall;
+		var biggerBall = decision ? otherBall : curBall;
+
 		if(smallerBall == otherBall)
 			axis = axis.mult(-1);
 
 		smallerBall.position = biggerBall.position.add(axis.norm().mult(smallerBall.radius + biggerBall.radius));
+
+		if(friction)
+			otherBall.velocity = otherBall.velocity.mult(mu);
+
+		curBall.numCol+=0.1;
+		otherBall.numCol+=0.1;
 	}
 }
 
@@ -76,5 +92,11 @@ function handleCollisionRectBall(curRect, otherBall)
 		otherBall.velocity = velRect.rotate(-curRect.rotation);
 		posRect = posRect.rotate(-curRect.rotation);
 		otherBall.position = curRect.position.add(posRect);
+
+		if(friction && otherBall.velocity.sub(projVel).mag2() > 2000)
+			otherBall.velocity = otherBall.velocity.mult(mu);
+
+		if(otherBall.position.y < g.height / 2)
+			otherBall.numCol++;
 	}
 }

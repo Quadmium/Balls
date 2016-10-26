@@ -7,6 +7,10 @@ var pBall = function(radius, position)
 	this.mass = 1;
 	this.color = "#000000";
 	this.collision = true;
+	this.text = "";
+	this.textColor = '#FFFFFF';
+	this.static = false;
+	this.numCol = 0;
 };
 
 var pRect = function(width, height, position, rotation)
@@ -25,6 +29,9 @@ var pRect = function(width, height, position, rotation)
 
 pBall.prototype.onUpdate = function(deltaTime) 
 {
+	if(this.static)
+		return;
+
 	this.acceleration.y = -500;
 	this.velocity = this.velocity.add(this.acceleration.mult(deltaTime));
 	this.position = this.position.add(this.velocity.mult(deltaTime));
@@ -60,6 +67,9 @@ pBall.prototype.onUpdate = function(deltaTime)
 		if(friction)
 			this.velocity.x *= mu;
 	}
+
+	if(this.position.y < g.height / 2 && this.numCol > 50)
+		this.static = true;
 }
 
 pBall.prototype.onDraw = function(g) 
@@ -69,11 +79,18 @@ pBall.prototype.onDraw = function(g)
 	g.ctx.arc(this.position.x * scale, g.canvas.height - this.position.y * scale, this.radius * scale, 0, 2 * Math.PI);
 	g.ctx.fill();
 	g.ctx.closePath();
+
+	if(this.text != "")
+	{
+		g.ctx.fillStyle = this.textColor;
+		g.ctx.textAlign = 'center';
+		g.ctx.font = Math.floor(scale * this.radius) + "px serif";
+		g.ctx.fillText(this.text, this.position.x * scale, g.canvas.height - (this.position.y - this.radius * 0.2) * scale);
+	}
 }
 
 pRect.prototype.onUpdate = function(deltaTime) 
 {
-	this.rotation += deltaTime;
 }
 
 pRect.prototype.onDraw = function(g) 
