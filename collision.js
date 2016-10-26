@@ -40,16 +40,76 @@ function handleCollisionBallBall(curBall, otherBall)
 
 function handleCollisionRectBall(curRect, otherBall)
 {
+	// Convert to rectangle frame
+	var posRect = otherBall.position.sub(curRect.position);
+	posRect = posRect.rotate(curRect.rotation);
+	var velRect = otherBall.velocity.rotate(curRect.rotation);
+	
 	// Clamp to find closest rectangle point
-	var closestX = clamp(otherBall.position.x, curRect.position.x - curRect.width / 2, curRect.position.x + curRect.width / 2);
-	var closestY = clamp(otherBall.position.y, curRect.position.y - curRect.height / 2, curRect.position.y + curRect.height / 2);
+	var closestX = clamp(posRect.x, -curRect.width / 2, curRect.width / 2);
+	var closestY = clamp(posRect.y, -curRect.height / 2, curRect.height / 2);
 
-	var distanceX = otherBall.position.x - closestX;
-	var distanceY = otherBall.position.y - closestY;
+	var distanceX = posRect.x - closestX;
+	var distanceY = posRect.y - closestY;
 
+	// If less than radius away from closest point within rectangle, am hitting rectangle
 	if(distanceX * distanceX + distanceY * distanceY < otherBall.radius * otherBall.radius)
 	{
-		console.log("Collision");
-		console.log(curRect.position.y);
+		// Project onto opposite axis in order to flip the correct component
+		// i.e. flip the y component by projecting to the perpendicular axis, which happens to be the other axis in a rect
+		var axis;
+
+		if(Math.abs(distanceX) > Math.abs(distanceY))
+		{
+			axis = new vector(curRect.width, 0);
+			posRect.x = (distanceX < 0 ? -1 : 1) * (curRect.width / 2 + otherBall.radius);
+		}
+		else
+		{
+			axis = new vector(0, curRect.height);
+			posRect.y = (distanceY < 0 ? -1 : 1) * (curRect.height / 2 + otherBall.radius);
+		}
+
+		var projVel = velRect.proj(axis);
+		velRect = velRect.add(projVel.mult(-2));
+
+		otherBall.velocity = velRect.rotate(-curRect.rotation);
+		posRect = posRect.rotate(-curRect.rotation);
+		otherBall.position = curRect.position.add(posRect);
 	}
+
+	/*
+	ar velRect = otherBall.velocity.rotate(-curRect.rotation);
+	
+	// Clamp to find closest rectangle point
+	var closestX = clamp(posRect.x, curRect.position.x - curRect.width / 2, curRect.position.x + curRect.width / 2);
+	var closestY = clamp(posRect.y, curRect.position.y - curRect.height / 2, curRect.position.y + curRect.height / 2);
+
+	var distanceX = posRect.x - closestX;
+	var distanceY = posRect.y - closestY;
+
+	// If less than radius away from closest point within rectangle, am hitting rectangle
+	if(distanceX * distanceX + distanceY * distanceY < otherBall.radius * otherBall.radius)
+	{
+		// Project onto opposite axis in order to flip the correct component
+		// i.e. flip the y component by projecting to the perpendicular axis, which happens to be the other axis in a rect
+		var axis;
+
+		if(Math.abs(distanceX) > Math.abs(distanceY))
+		{
+			axis = new vector(curRect.width, 0);
+			posRect.x = curRect.position.x + (distanceX < 0 ? -1 : 1) * (curRect.width / 2 + otherBall.radius);
+		}
+		else
+		{
+			axis = new vector(0, curRect.height);
+			posRect.y = curRect.position.y + (distanceY < 0 ? -1 : 1) * (curRect.height / 2 + otherBall.radius);
+		}
+
+		var projVel = velRect.proj(axis);
+		velRect = velRect.add(projVel.mult(-2));
+
+		otherBall.velocity = velRect.rotate(curRect.rotation);
+	}
+	*/
 }

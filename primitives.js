@@ -73,7 +73,7 @@ pBall.prototype.onDraw = function(g)
 
 pRect.prototype.onUpdate = function(deltaTime) 
 {
-
+	this.rotation += deltaTime;
 }
 
 pRect.prototype.onDraw = function(g) 
@@ -81,10 +81,14 @@ pRect.prototype.onDraw = function(g)
 	g.ctx.fillStyle = this.color;
 	g.ctx.strokeStyle = this.color;
 	g.ctx.beginPath();
-	g.ctx.rect(this.position.x - this.width / 2, g.canvas.height - this.position.y - this.height / 2, this.width, this.height);
+	g.ctx.save();
+	g.ctx.translate(this.position.x, g.canvas.height - this.position.y);
+	g.ctx.rotate(this.rotation);
+	g.ctx.rect(-this.width / 2, -this.height / 2, this.width, this.height);
 	if(this.outline)
 		g.ctx.stroke();
 	else
 		g.ctx.fill();
+	g.ctx.restore();
 	g.ctx.closePath();
 }

@@ -57,4 +57,10 @@ var vector = function(x, y)
 	this.clone = function() {
 		return new vector(this.x, this.y);
 	};
+	this.rotate = function(t) {
+		return new vector(this.x * Math.cos(t) - this.y * Math.sin(t), this.y * Math.cos(t) + this.x * Math.sin(t));
+	};
+	this.rotatePivot = function(t, v) {
+		return this.sub(v).rotate(t).add(v);
+	};
 }

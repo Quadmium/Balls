@@ -63,17 +63,17 @@ function init()
 
 function initWorld()
 {
-	worldObjects.push(new pBall(70, new vector(250, 400)));
+	/*worldObjects.push(new pBall(70, new vector(250, 400)));
 	worldObjects.push(new pBall(50, new vector(400, 400)));
 	worldObjects[0].velocity = new vector(200, 0);
 	worldObjects[0].mass = 70*70/50/50;
 	worldObjects[0].color = "#550055";
 	worldObjects[1].velocity = new vector(400, -50);
-	worldObjects[0].color = "#555555";
+	worldObjects[0].color = "#555555";*/
 
-	worldObjects.push(new pRect(100, 100, new vector(50,400)));
-	worldObjects[2].color = "#555555";
-	worldObjects[2].outline = true;
+	worldObjects.push(new pRect(100, 500, new vector(400,400), 0 * Math.PI / 180));
+	worldObjects[0].color = "#555555";
+	worldObjects[0].outline = true;
 }
 
 function onUpdate()
