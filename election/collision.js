@@ -51,8 +51,8 @@ function handleCollisionBallBall(curBall, otherBall)
 
 		if(otherBall.position.y < g.height / 2 && curBall.position.y < g.height / 2)
 		{
-			curBall.numCol+=deltaTime;
-			otherBall.numCol+=deltaTime;
+			curBall.numCol += deltaTime;
+			otherBall.numCol += deltaTime;
 		}
 	}
 }
