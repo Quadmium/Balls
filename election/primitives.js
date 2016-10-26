@@ -68,7 +68,7 @@ pBall.prototype.onUpdate = function(deltaTime)
 			this.velocity.x *= mu;
 	}
 
-	if(this.position.y < g.height / 2 && this.numCol > 50)
+	if(this.position.y < g.height / 2 && this.numCol > 5)
 		this.static = true;
 }
 

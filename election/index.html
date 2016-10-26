@@ -43,7 +43,7 @@ var worldObjects = [];
 var mousePressed = false;
 var drawingBall = false;
 var friction = true;
-var mu = 0.7;
+var mu = 0.8;
 var scale = 1;
 
 var electionTrump = ["AL","9","AK","3","AZ","11","AR","6","GA","16","ID","4","IN","11","IA","6","KS","6","KY","8","LA","8","MS","6","MO","10","MT","3","NE","5","ND","3","OH","18","OK","7","SC","9","SD","3","TN","11","TX","38","UT","6","WV","5","WY","3"];
@@ -136,7 +136,7 @@ function spawnBall()
 
 function onUpdate()
 {
-	var deltaTime = (new Date().getTime() - window.lastTime) / 1000;
+	window.deltaTime = (new Date().getTime() - window.lastTime) / 1000;
 	window.lastTime = new Date().getTime();
 
 	if(window.innerHeight / window.innerWidth < g.height / g.width)
