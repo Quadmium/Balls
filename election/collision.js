@@ -49,8 +49,11 @@ function handleCollisionBallBall(curBall, otherBall)
 		if(friction)
 			otherBall.velocity = otherBall.velocity.mult(mu);
 
-		curBall.numCol+=deltaTime;
-		otherBall.numCol+=deltaTime;
+		if(otherBall.position.y < g.height / 2 && curBall.position.y < g.height / 2)
+		{
+			curBall.numCol+=deltaTime;
+			otherBall.numCol+=deltaTime;
+		}
 	}
 }
 
