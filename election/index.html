@@ -1,0 +1,183 @@
+<html>
+<head>
+	<style>
+	html, body {
+		margin: 0;
+		padding: 0;
+		background-image: url("new_year_background.png");
+		background-repeat: repeat;
+	}
+
+	* {
+		overflow-x: hidden;
+	}
+
+	::-webkit-scrollbar { 
+    	display: none; 
+	}
+
+	#can {
+		display: block;
+		margin: auto;
+	}
+
+	</style>
+	<title>Balls</title>
+</head>
+
+<body onload="init()">
+	<canvas width=500 height=500 id="can"></canvas>
+	<p>Hello!</p>
+	<p>Click and drag to create a ball</p>
+	<p>Press F to toggle friction</p>
+	<p>Press C to clear</p>
+</body>
+
+<script src="util.js"></script>
+<script src="primitives.js"></script>
+<script src="collision.js"></script>
+
+<script>
+
+var worldObjects = [];
+var mousePressed = false;
+var drawingBall = false;
+var friction = false;
+var mu = 0.9;
+var scale = 1;
+
+function init()
+{
+	window.lastTime = new Date().getTime();
+	window.g = new graphics();
+
+	g.canvas.addEventListener('mousemove', function(evt) {
+		window.mousePos = getMousePos(g.canvas, evt);
+	}, false);
+
+	g.canvas.addEventListener('mousedown', function(evt) {
+		window.mouseClickPos = getMousePos(g.canvas, evt);
+		window.mousePressed = true;
+	}, false);
+
+	g.canvas.addEventListener('mouseup', function(evt) {
+		window.mousePressed = false;
+	}, false);
+
+	initWorld();
+
+	onUpdate();
+}
+
+function initWorld()
+{
+	/*worldObjects.push(new pBall(70, new vector(250, 400)));
+	worldObjects.push(new pBall(50, new vector(400, 400)));
+	worldObjects[0].velocity = new vector(200, 0);
+	worldObjects[0].mass = 70*70/50/50;
+	worldObjects[0].color = "#550055";
+	worldObjects[1].velocity = new vector(400, -50);
+	worldObjects[0].color = "#555555";*/
+
+	worldObjects.push(new pRect(100, 500, new vector(400,400), 0 * Math.PI / 180));
+	worldObjects[0].color = "#555555";
+	worldObjects[0].outline = true;
+}
+
+function onUpdate()
+{
+	var deltaTime = (new Date().getTime() - window.lastTime) / 1000;
+	window.lastTime = new Date().getTime();
+
+	if(window.innerHeight / window.innerWidth < g.height / g.width)
+	{
+		g.canvas.width = g.width / g.height * g.canvas.height;
+		g.canvas.height = window.innerHeight;
+		scale = g.canvas.height / g.height;
+	}
+	else
+	{
+		g.canvas.height = g.height / g.width * g.canvas.width;
+		g.canvas.width = window.innerWidth;
+		scale = g.canvas.width / g.width;
+	}
+
+	for(var i=0; i < worldObjects.length; i++)
+	{
+		var curObj = worldObjects[i];
+
+		for(var j=i+1; j < worldObjects.length; j++)
+			handleCollision(curObj, worldObjects[j]);
+
+		if(curObj.onUpdate != undefined)
+			curObj.onUpdate(deltaTime);
+	}
+	
+	//g.ctx.fillStyle="#FFFFFF";
+	//g.ctx.fillRect(0, 0, g.canvas.width, g.canvas.height);
+	g.ctx.clearRect(0, 0, g.canvas.width, g.canvas.height);
+
+	for(var i=0; i < worldObjects.length; i++)
+	{
+		var curObj = worldObjects[i];
+		
+		if(curObj.onDraw != undefined)
+			curObj.onDraw(g);
+	}
+
+	handleInput();
+
+	setTimeout(onUpdate, 1);
+}
+
+function handleInput()
+{
+	if(mousePressed || drawingBall)
+	{
+		window.drawingBall = true;
+		var radius = mousePos.sub(mouseClickPos).mag();
+
+		var clr = Math.floor(radius) % 360;
+		g.ctx.fillStyle = "hsl(" + clr + ", 100%, 50%)";
+		g.ctx.beginPath();
+		g.ctx.arc(mouseClickPos.x, mouseClickPos.y, radius, 0, 2 * Math.PI);
+		g.ctx.fill();
+		g.ctx.closePath();
+	} 
+	
+	if(!mousePressed && drawingBall)
+	{
+		drawingBall = false;
+		var adjPos = mouseClickPos.clone();
+		adjPos.y = g.canvas.height - adjPos.y;
+		var b = new pBall(mousePos.sub(mouseClickPos).mag(), adjPos);
+		b.mass = b.radius * b.radius / 50 / 50;
+
+		var clr = Math.floor(b.radius) % 360;
+		b.color = "hsl(" + clr + ", 100%, 50%)";
+
+		worldObjects.push(b);
+	}
+}
+
+function getMousePos(canvas, evt) 
+{
+	var rect = canvas.getBoundingClientRect();
+	return new vector(evt.clientX - rect.left, evt.clientY - rect.top);
+}
+
+document.onkeydown = checkKey;
+
+function checkKey(e) 
+{
+
+    e = e || window.event;
+
+    if (e.keyCode == '70')
+    	friction = !friction;
+    if (e.keyCode == '67')
+    	worldObjects.length = 0;
+}
+
+</script>
+</html>
