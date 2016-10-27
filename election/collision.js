@@ -25,18 +25,19 @@ function handleCollisionBallBall(curBall, otherBall)
 		var newv1 = bc1.sub(cmVel).mult(-1).add(cmVel);
 		var newv2 = bc2.sub(cmVel).mult(-1).add(cmVel);
 
-		curBall.velocity = curBall.velocity.sub(bc1).add(newv1);
-		otherBall.velocity = otherBall.velocity.sub(bc2).add(newv2);
+		curBall.velocity = curBall.velocity.sub(bc1).add(newv1.mult(mu * 0.5));
+		otherBall.velocity = otherBall.velocity.sub(bc2).add(newv2.mult(mu * 0.5));
 
-		var decision = curBall.radius < otherBall.radius;
+		var decision = curBall.position.y > otherBall.position.y;//curBall.radius < otherBall.radius;
 
-		if(curBall.static && !otherBall.static)
+		/*if(curBall.static && !otherBall.static)
 			decision = false;
 		else if (otherBall.static && !curBall.static)
 			decision = true;
 		else if(curBall.static && otherBall.static)
 			return;
-
+		*/
+		
 		// Avoid balls inside each other by moving smaller ball
 		var smallerBall = decision ? curBall : otherBall;
 		var biggerBall = decision ? otherBall : curBall;
@@ -46,8 +47,10 @@ function handleCollisionBallBall(curBall, otherBall)
 
 		smallerBall.position = biggerBall.position.add(axis.norm().mult(smallerBall.radius + biggerBall.radius));
 
+/*
 		if(friction)
-			otherBall.velocity = otherBall.velocity.mult(mu);
+			otherBall.velocity = otherBall.velocity.mult(mu * 0.1);
+*/
 
 		if(otherBall.position.y < g.height / 2 && curBall.position.y < g.height / 2)
 		{
