@@ -44,6 +44,8 @@ pBall.prototype.onUpdate = function(deltaTime)
 			this.velocity.y *= mu;
 	}
 
+	// Removed top limit for this sim because of balls getting stuck
+	/*
 	if(this.position.y > g.height - this.radius)
 	{
 		this.velocity.y = -this.velocity.y;
@@ -51,6 +53,7 @@ pBall.prototype.onUpdate = function(deltaTime)
 		if(friction)
 			this.velocity.y *= mu;
 	}
+	*/
 
 	if(this.position.x < this.radius)
 	{

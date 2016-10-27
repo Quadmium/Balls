@@ -19,6 +19,7 @@
 	#can {
 		display: block;
 		margin: auto;
+		opacity: 0.01;
 	}
 
 	</style>
@@ -27,10 +28,6 @@
 
 <body onload="init()">
 	<canvas width=500 height=500 id="can"></canvas>
-	<p>Hello!</p>
-	<p>Click and drag to create a ball</p>
-	<p>Press F to toggle friction</p>
-	<p>Press C to clear</p>
 </body>
 
 <script src="util.js"></script>
@@ -45,12 +42,15 @@ var drawingBall = false;
 var friction = true;
 var mu = 0.8;
 var scale = 1;
+var spawnRate = 800;
 
 var electionTrump = ["AL","9","AK","3","AZ","11","AR","6","GA","16","ID","4","IN","11","IA","6","KS","6","KY","8","LA","8","MS","6","MO","10","MT","3","NE","5","ND","3","OH","18","OK","7","SC","9","SD","3","TN","11","TX","38","UT","6","WV","5","WY","3"];
 
-var electionHillary = ["CO","9","CT","7","DE","3","HI","4","ME","4","MD","10","MA","11","MI","16","MN","10","NV","6","NH","4","NJ","14","NM","5","NY","29","NC","15","PA","20","VT","3","OR","7","RI","4","FL","29","IL","20","VA","13","WA","12","WI","10","CA","55"];
+var electionHillary = ["CO","9","CT","7","DE","3","HI","4","ME","4","MD","10","MA","11","MI","16","MN","10","NV","6","NH","4","NJ","14","NM","5","NY","29","NC","15","PA","20","VT","3","OR","7","RI","4","FL","29","IL","20","VA","13","WA","12","WI","10","DC","3","CA","55"];
 
-var spawnIndex = 0;
+// Index for trump/hillary lists, and spawnIndex will alternate 0/1
+var spawnITrump = 0, spawnIHillary = 0, spawnIndex = 0;
+var votesTrump = 0, votesHillary = 0;
 
 function init()
 {
@@ -70,24 +70,32 @@ function init()
 		window.mousePressed = false;
 	}, false);
 
+	unfade(document.getElementById("can"), 2);
+
 	initWorld();
 
 	onUpdate();
 }
 
+function unfade(element, time) {
+    var op = 0.01;  // initial opacity
+    element.style.display = 'block';
+    var timer = setInterval(function () {
+        if (op >= 1){
+            clearInterval(timer);
+        }
+        element.style.opacity = op;
+        element.style.filter = 'alpha(opacity=' + op * 100 + ")";
+        op += 0.01 / time;
+    }, 10);
+}
+
 function initWorld()
 {
-	/*worldObjects.push(new pBall(70, new vector(250, 400)));
-	worldObjects.push(new pBall(50, new vector(400, 400)));
-	worldObjects[0].velocity = new vector(200, 0);
-	worldObjects[0].mass = 70*70/50/50;
-	worldObjects[0].color = "#550055";
-	worldObjects[1].velocity = new vector(400, -50);
-	worldObjects[0].color = "#555555";*/
-
 	var cupWidth = 400;
 	window.trumpColor = "#bc4d4d";
 	window.hillaryColor = "#4d76bc";
+	window.midColor = "#de1fde";
 	var leadWidth = 300;
 	var leadRot = 30 * Math.PI / 180
 
@@ -103,35 +111,41 @@ function initWorld()
 	worldObjects[4].color = hillaryColor;
 	worldObjects.push(new pRect(cupWidth + 10, 50, new vector(g.width-(25+5+cupWidth/2),35), 0 * Math.PI / 180));
 	worldObjects[5].color = trumpColor;
-	worldObjects.push(new pRect(leadWidth, 50, new vector(g.width/2 + leadWidth * Math.cos(leadRot) / 2,g.height - 200), 0 * Math.PI / 180));
+	worldObjects.push(new pRect(leadWidth, 50, new vector(g.width/2 + leadWidth * Math.cos(leadRot) / 2,g.height - 220), leadRot));
 	worldObjects[6].color = trumpColor;
-	worldObjects[6].rotation = leadRot;
-	worldObjects.push(new pRect(leadWidth, 50, new vector(g.width/2 - leadWidth * Math.cos(leadRot) / 2,g.height - 200), 0 * Math.PI / 180));
+	worldObjects.push(new pRect(leadWidth, 50, new vector(g.width/2 - leadWidth * Math.cos(leadRot) / 2,g.height - 220), -leadRot));
 	worldObjects[7].color = hillaryColor;
-	worldObjects[7].rotation = -leadRot;
+	worldObjects.push(new pRect(25, 57, new vector(g.width/2, g.height - 227 + leadWidth / 2 * Math.sin(leadRot))));
+	worldObjects[8].color = midColor;
 
-	setTimeout(spawnBall, 1000);
+	window.loopTimeout = setTimeout(spawnBall, spawnRate);
 }
 
 function spawnBall()
 {
-	if(spawnIndex < electionTrump.length + electionHillary.length)
+	if(spawnITrump < electionTrump.length / 2 || spawnIHillary < electionHillary.length / 2)
 	{
-		var list = spawnIndex % 2 == 0 ? electionTrump : electionHillary;
-		var xPos = spawnIndex % 2 == 0 ? g.width / 2 + 20 : g.width / 2 - 20;
+		var spawnTrump = spawnITrump < electionTrump.length / 2 && (spawnIndex % 2 == 0 || spawnIHillary >= electionHillary.length / 2);
+		var list = spawnTrump ? electionTrump : electionHillary;
+		var xPos = spawnTrump ? g.width / 2 + 50: g.width / 2 - 50;
 
-		worldObjects.push(new pBall(Math.sqrt(parseInt(list[Math.floor(spawnIndex/2) * 2 + 1])) * 10,new vector(xPos + Math.random() * 5, g.height)));
-		worldObjects[worldObjects.length-1].text = list[Math.floor(spawnIndex/2) * 2];
-		worldObjects[worldObjects.length - 1].color = spawnIndex % 2 == 0 ? trumpColor.replace("4","9") : hillaryColor.replace("4","9");
+		// Note: incrementing here if chosen
+		var index = spawnTrump ? spawnITrump++ : spawnIHillary++;
 
-		spawnIndex++;
-		setTimeout(spawnBall, 1000);
+		worldObjects.push(new pBall(Math.sqrt(parseInt(list[index * 2 + 1])) * 10, new vector(xPos, g.height + 40)));
+		worldObjects[worldObjects.length-1].text = list[index * 2];
+
+		// Arbitrary color switching here! This line may break if colors are changed
+		worldObjects[worldObjects.length - 1].color = spawnTrump ? trumpColor.replace("4","9") : hillaryColor.replace("4","9");
+
+		if(spawnTrump)
+			votesTrump += parseInt(list[index * 2 + 1]);
+		else
+			votesHillary += parseInt(list[index * 2 + 1]);
+
+		spawnIndex = 1 - spawnIndex;
+		window.loopTimeout = setTimeout(spawnBall, spawnRate);
 	}
-
-	/*
-	worldObjects.push(new pBall(Math.floor(Math.random()*70),new vector(600, 200)));
-	worldObjects[worldObjects.length-1].text = "hi";
-	*/
 }
 
 function onUpdate()
@@ -167,6 +181,8 @@ function onUpdate()
 	//g.ctx.fillRect(0, 0, g.canvas.width, g.canvas.height);
 	g.ctx.clearRect(0, 0, g.canvas.width, g.canvas.height);
 
+	drawText();
+
 	for(var i=0; i < worldObjects.length; i++)
 	{
 		var curObj = worldObjects[i];
@@ -178,6 +194,30 @@ function onUpdate()
 	//handleInput();
 
 	setTimeout(onUpdate, 1);
+}
+
+function drawText()
+{
+	g.ctx.fillStyle = "#555555";
+	g.ctx.textAlign = 'center';
+	g.ctx.font = Math.floor(scale * 50) + "px serif";
+	g.ctx.fillText("Presidential", g.canvas.width / 2, g.canvas.height / 2.5);
+	g.ctx.font = Math.floor(scale * 60) + "px serif";
+	g.ctx.fillText("Race", g.canvas.width / 2, g.canvas.height / 2.1);
+	g.ctx.font = Math.floor(scale * 30) + "px serif";
+	g.ctx.fillText("Press C to restart", g.canvas.width / 2, g.canvas.height / 1.4);
+
+	g.ctx.fillStyle = hillaryColor;
+	g.ctx.textAlign = 'center';
+	g.ctx.font = Math.floor(scale * 40) + "px serif";
+	g.ctx.fillText("Hillary", g.canvas.width / 2.45, g.canvas.height / 1.8);
+	g.ctx.fillText(votesHillary, g.canvas.width / 2.45, g.canvas.height / 1.62);
+
+	g.ctx.fillStyle = trumpColor;
+	g.ctx.textAlign = 'center';
+	g.ctx.font = Math.floor(scale * 40) + "px serif";
+	g.ctx.fillText("Trump", g.canvas.width / 1.69, g.canvas.height / 1.8);
+	g.ctx.fillText(votesTrump, g.canvas.width / 1.69, g.canvas.height / 1.62);
 }
 
 function handleInput()
@@ -226,7 +266,16 @@ function checkKey(e)
     if (e.keyCode == '70')
     	friction = !friction;
     if (e.keyCode == '67')
+    {
     	worldObjects.length = 0;
+    	spawnITrump = 0;
+    	spawnIHillary = 0;
+    	spawnIndex = 0;
+    	votesTrump = 0;
+    	votesHillary = 0;
+    	clearTimeout(window.loopTimeout);
+    	initWorld();
+    }
 }
 
 </script>

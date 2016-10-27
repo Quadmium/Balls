@@ -28,16 +28,16 @@ function handleCollisionBallBall(curBall, otherBall)
 		curBall.velocity = curBall.velocity.sub(bc1).add(newv1.mult(mu * 0.5));
 		otherBall.velocity = otherBall.velocity.sub(bc2).add(newv2.mult(mu * 0.5));
 
-		var decision = curBall.position.y > otherBall.position.y;//curBall.radius < otherBall.radius;
+		// Bubble up, smaller was now changed to higher Y
+		var decision = curBall.position.y > otherBall.position.y; //curBall.radius < otherBall.radius;
 
-		/*if(curBall.static && !otherBall.static)
+		if(curBall.static && !otherBall.static)
 			decision = false;
 		else if (otherBall.static && !curBall.static)
 			decision = true;
 		else if(curBall.static && otherBall.static)
 			return;
-		*/
-		
+
 		// Avoid balls inside each other by moving smaller ball
 		var smallerBall = decision ? curBall : otherBall;
 		var biggerBall = decision ? otherBall : curBall;
@@ -46,17 +46,6 @@ function handleCollisionBallBall(curBall, otherBall)
 			axis = axis.mult(-1);
 
 		smallerBall.position = biggerBall.position.add(axis.norm().mult(smallerBall.radius + biggerBall.radius));
-
-/*
-		if(friction)
-			otherBall.velocity = otherBall.velocity.mult(mu * 0.1);
-*/
-
-		if(otherBall.position.y < g.height / 2 && curBall.position.y < g.height / 2)
-		{
-			curBall.numCol += deltaTime;
-			otherBall.numCol += deltaTime;
-		}
 	}
 }
 
@@ -93,16 +82,10 @@ function handleCollisionRectBall(curRect, otherBall)
 		}
 
 		var projVel = velRect.proj(axis);
-		velRect = velRect.add(projVel.mult(-2));
+		velRect = velRect.sub(projVel).sub(projVel.mult(friction ? mu : 1));
 
 		otherBall.velocity = velRect.rotate(-curRect.rotation);
 		posRect = posRect.rotate(-curRect.rotation);
 		otherBall.position = curRect.position.add(posRect);
-
-		if(friction && otherBall.velocity.sub(projVel).mag2() > 2000)
-			otherBall.velocity = otherBall.velocity.mult(mu);
-
-		if(otherBall.position.y < g.height / 2)
-			otherBall.numCol += 10 * deltaTime;
 	}
 }
